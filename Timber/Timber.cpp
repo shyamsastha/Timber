@@ -50,6 +50,24 @@ int main()
 	spriteTree.setTexture(textureTree);
 	spriteTree.setPosition(810, 0);
 
+	// Enhanced version
+	Texture textureTree2;
+	textureTree2.loadFromFile("graphics/tree2.png");
+	Sprite spriteTree2;
+	spriteTree2.setTexture(textureTree2);
+	Sprite spriteTree3;
+	spriteTree3.setTexture(textureTree2);
+	Sprite spriteTree4;
+	spriteTree4.setTexture(textureTree2);
+	Sprite spriteTree5;
+	spriteTree5.setTexture(textureTree2);
+
+
+	spriteTree2.setPosition(20, 0);
+	spriteTree3.setPosition(300, -100);
+	spriteTree4.setPosition(1300, -200);
+	spriteTree5.setPosition(1500, -100);
+
 	// Prepare the bee
 	Texture textureBee;
 	textureBee.loadFromFile("graphics/bee.png");
@@ -69,32 +87,23 @@ int main()
 	// Load 1 new texture
 	textureCloud.loadFromFile("graphics/cloud.png");
 
-	// 3 New sprites withe the same texture
-	Sprite spriteCloud1;
-	Sprite spriteCloud2;
-	Sprite spriteCloud3;
-	spriteCloud1.setTexture(textureCloud);
-	spriteCloud2.setTexture(textureCloud);
-	spriteCloud3.setTexture(textureCloud);
+	// Make the clouds with arrays
+	const int NUM_CLOUDS = 6;
+	Sprite clouds[NUM_CLOUDS];
+	int cloudSpeeds[NUM_CLOUDS];
+	bool cloudsActive[NUM_CLOUDS];
 
-	// Position the clouds off screen
-	spriteCloud1.setPosition(0, 0);
-	spriteCloud2.setPosition(0, 150);
-	spriteCloud3.setPosition(0, 300);
+	for (int i = 0; i < NUM_CLOUDS; i++)
+	{
+		clouds[i].setTexture(textureCloud);
+		clouds[i].setPosition(-300, i * 150);
+		cloudsActive[i] = false;
+		cloudSpeeds[i] = 0;
 
-	// Are the clouds currently on screen?
-	bool cloud1Active = false;
-	bool cloud2Active = false;
-	bool cloud3Active = false;
-
-	// How fast is each cloud?
-	float cloud1Speed = 0.0f;
-	float cloud2Speed = 0.0f;
-	float cloud3Speed = 0.0f;
+	}
 
 	// Variables to control time itself
 	Clock clock;
-
 	// Time bar
 	RectangleShape timeBar;
 	float timeBarStartWidth = 400;
@@ -109,20 +118,27 @@ int main()
 
 	// Track whether the game is running
 	bool paused = true;
-
 	// Draw some text
 	int score = 0;
 
-	sf::Text messageText;
-	sf::Text scoreText;
+	Text messageText;
+	Text scoreText;
+	Text fpsText;
 
 	// We need to choose a font
-	sf::Font font;
+	Font font;
 	font.loadFromFile("fonts/KOMIKAP_.ttf");
 
 	// Set the font to our message
 	messageText.setFont(font);
 	scoreText.setFont(font);
+	fpsText.setFont(font);
+
+
+	// Set up the fps text
+	fpsText.setFillColor(Color::White);
+	fpsText.setCharacterSize(100);
+	fpsText.setPosition(1200, 20);
 
 	// Assign the actual message
 	messageText.setString("Press Enter to start!");
@@ -147,6 +163,17 @@ int main()
 	messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
 
 	scoreText.setPosition(20, 20);
+
+	// Backgrounds for the text
+	RectangleShape rect1;
+	rect1.setFillColor(sf::Color(0, 0, 0, 150));
+	rect1.setSize(Vector2f(600, 105));
+	rect1.setPosition(0, 30);
+
+	RectangleShape rect2;
+	rect2.setFillColor(sf::Color(0, 0, 0, 150));
+	rect2.setSize(Vector2f(1000, 105));
+	rect2.setPosition(1150, 30);
 
 	// Prepare 5 branches
 	Texture textureBranch;
@@ -222,6 +249,9 @@ int main()
 	Sound outOfTime;
 	outOfTime.setBuffer(ootBuffer);
 
+	// control the drawing of the score
+	int lastDrawn = 0;
+
 	while (window.isOpen())
 	{
 		// score ++;
@@ -275,6 +305,7 @@ int main()
 			spritePlayer.setPosition(580, 720);
 
 			acceptInput = true;
+
 
 		}
 
@@ -353,6 +384,7 @@ int main()
 
 		}
 
+
 		/*
 		****************************************
 		Update the scene
@@ -391,7 +423,9 @@ int main()
 				// Play the out of time sound
 				outOfTime.play();
 
+
 			}
+
 
 			// Setup the bee
 			if (!beeActive)
@@ -425,105 +459,55 @@ int main()
 				}
 			}
 
-			// Manage the clouds
-			// Cloud 1
-			if (!cloud1Active)
+			// Manage the clouds with arrays
+			for (int i = 0; i < NUM_CLOUDS; i++)
 			{
-
-				// How fast is the cloud
-				srand((int)time(0) * 10);
-				cloud1Speed = (rand() % 200);
-
-				// How high is the cloud
-				srand((int)time(0) * 10);
-				float height = (rand() % 150);
-				spriteCloud1.setPosition(-200, height);
-				cloud1Active = true;
-
-
-			}
-			else
-			{
-
-				spriteCloud1.setPosition(
-					spriteCloud1.getPosition().x +
-					(cloud1Speed * dt.asSeconds()),
-					spriteCloud1.getPosition().y);
-
-				// Has the cloud reached the right hand edge of the screen?
-				if (spriteCloud1.getPosition().x > 1920)
+				if (!cloudsActive[i])
 				{
-					// Set it up ready to be a whole new cloud next frame
-					cloud1Active = false;
+					// How fast is the cloud
+					srand((int)time(0) * i);
+					cloudSpeeds[i] = (rand() % 200);
+
+					// How high is the cloud
+					srand((int)time(0) * i);
+					float height = (rand() % 150);
+					clouds[i].setPosition(-200, height);
+					cloudsActive[i] = true;
+
 				}
-			}
-			// Cloud 2
-			if (!cloud2Active)
-			{
-
-				// How fast is the cloud
-				srand((int)time(0) * 20);
-				cloud2Speed = (rand() % 200);
-
-				// How high is the cloud
-				srand((int)time(0) * 20);
-				float height = (rand() % 300) - 150;
-				spriteCloud2.setPosition(-200, height);
-				cloud2Active = true;
-
-
-			}
-			else
-			{
-
-				spriteCloud2.setPosition(
-					spriteCloud2.getPosition().x +
-					(cloud2Speed * dt.asSeconds()),
-					spriteCloud2.getPosition().y);
-
-				// Has the cloud reached the right hand edge of the screen?
-				if (spriteCloud2.getPosition().x > 1920)
+				else
 				{
-					// Set it up ready to be a whole new cloud next frame
-					cloud2Active = false;
+					// Set the new position
+					clouds[i].setPosition(
+						clouds[i].getPosition().x +
+						(cloudSpeeds[i] * dt.asSeconds()),
+						clouds[i].getPosition().y);
+
+					// Has the cloud reached the right hand edge of the screen?
+					if (clouds[i].getPosition().x > 1920)
+					{
+						// Set it up ready to be a whole new cloud next frame
+						cloudsActive[i] = false;
+					}
+
 				}
-			}
-
-			if (!cloud3Active)
-			{
-
-				// How fast is the cloud
-				srand((int)time(0) * 30);
-				cloud3Speed = (rand() % 200);
-
-				// How high is the cloud
-				srand((int)time(0) * 30);
-				float height = (rand() % 450) - 150;
-				spriteCloud3.setPosition(-200, height);
-				cloud3Active = true;
-
 
 			}
-			else
-			{
+			
+			// Draw the score and the frame rate once every 100 frames
+			lastDrawn++;
+			if (lastDrawn == 100) {
+				// Update the score text
+				std::stringstream ss;
+				ss << "Score = " << score;
+				scoreText.setString(ss.str());
 
-				spriteCloud3.setPosition(
-					spriteCloud3.getPosition().x +
-					(cloud3Speed * dt.asSeconds()),
-					spriteCloud3.getPosition().y);
-
-				// Has the cloud reached the right hand edge of the screen?
-				if (spriteCloud3.getPosition().x > 1920)
-				{
-					// Set it up ready to be a whole new cloud next frame
-					cloud3Active = false;
-				}
+				// Draw the fps
+				std::stringstream ss2;
+				ss2 << "FPS = " << 1 / dt.asSeconds();
+				fpsText.setString(ss2.str());
+				lastDrawn = 0;
 			}
-
-			// Update the score text
-			std::stringstream ss;
-			ss << "Score = " << score;
-			scoreText.setString(ss.str());
 
 			// update the branch sprites
 			for (int i = 0; i < NUM_BRANCHES; i++)
@@ -605,24 +589,32 @@ int main()
 
 			}
 
-		}
 
-		/*
-		****************************************
-		Draw the scene
-		****************************************
-		*/
+		}// End if(!paused)
 
-		// Clear everything from the last frame
+		 /*
+		 ****************************************
+		 Draw the scene
+		 ****************************************
+		 */
+
+		 // Clear everything from the last frame
 		window.clear();
 
 		// Draw our game scene here
 		window.draw(spriteBackground);
 
 		// Draw the clouds
-		window.draw(spriteCloud1);
-		window.draw(spriteCloud2);
-		window.draw(spriteCloud3);
+		for (int i = 0; i < NUM_CLOUDS; i++)
+		{
+			window.draw(clouds[i]);
+		}
+
+		// Enhanced version
+		window.draw(spriteTree2);
+		window.draw(spriteTree3);
+		window.draw(spriteTree4);
+		window.draw(spriteTree5);
 
 		// Draw the branches
 		for (int i = 0; i < NUM_BRANCHES; i++) {
@@ -631,26 +623,37 @@ int main()
 
 		// Draw the tree
 		window.draw(spriteTree);
+
 		// Draw the player
 		window.draw(spritePlayer);
 
 		// Draw the axe
 		window.draw(spriteAxe);
 
-		// Draw the flying log
+		// Draraw the flying log
 		window.draw(spriteLog);
 
 		// Draw the gravestone
 		window.draw(spriteRIP);
 
-		// Draw the bee
+		// Draw backgrounds for the text
+		window.draw(rect1);
+		window.draw(rect2);
+
+		// Drawraw the bee
 		window.draw(spriteBee);
 
 		// Draw the score
 		window.draw(scoreText);
 
+
+
+		// Draw the FPS
+		window.draw(fpsText);
+
 		// Draw the timebar
 		window.draw(timeBar);
+
 
 		if (paused)
 		{
