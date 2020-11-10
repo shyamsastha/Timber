@@ -2,6 +2,7 @@
 //
 
 #include "pch.h"
+#include <sstream>
 #include <SFML/Graphics.hpp>
 #include <iostream>
 
@@ -85,6 +86,44 @@ int main()
 
 	// Track whether the game is running
 	bool paused = true;
+
+	// Draw some text
+	int score = 0;
+
+	sf::Text messageText;
+	sf::Text scoreText;
+
+	// We need to choose a font
+	sf::Font font;
+	font.loadFromFile("fonts/KOMIKAP_.ttf");
+
+	// Set the font to our message
+	messageText.setFont(font);
+	scoreText.setFont(font);
+
+	// Assign the actual message
+	messageText.setString("Press Enter to start!");
+	scoreText.setString("Score = 0");
+
+	// Make it really big
+	messageText.setCharacterSize(75);
+	scoreText.setCharacterSize(100);
+
+	// Choose a color
+	messageText.setFillColor(Color::White);
+	scoreText.setFillColor(Color::White);
+
+	// Position the text
+	FloatRect textRect = messageText.getLocalBounds();
+
+	messageText.setOrigin(textRect.left +
+		textRect.width / 2.0f,
+		textRect.top +
+		textRect.height / 2.0f);
+
+	messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
+
+	scoreText.setPosition(20, 20);
 
 	while (window.isOpen())
 	{
@@ -242,6 +281,12 @@ int main()
 					cloud3Active = false;
 				}
 			}
+
+			// Update the score text
+			std::stringstream ss;
+			ss << "Score = " << score;
+			scoreText.setString(ss.str());
+
 		}
 
 		/*
@@ -266,6 +311,15 @@ int main()
 
 		// Drawraw the insect
 		window.draw(spriteBee);
+
+		// Draw the score
+		window.draw(scoreText);
+
+		if (paused)
+		{
+			// Draw our message
+			window.draw(messageText);
+		}
 
 		// Show everything we just drew
 		window.display();
