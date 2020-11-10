@@ -1,9 +1,9 @@
-// HelloSFML.cpp : This file contains the 'main' function. Program execution begins and ends there.
-//
+//Important Libraries for the timber game
 
 #include "pch.h"
 #include <sstream>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <iostream>
 
 // Make code easier to type with "using namespace"
@@ -157,7 +157,7 @@ int main()
 		branches[i].setTexture(textureBranch);
 		branches[i].setPosition(-2000, -2000);
 
-		// Set the sprite's origin to dead centre
+		// Set the sprite's origin to dead center
 		// We can then spin it round without changing its position
 		branches[i].setOrigin(220, 20);
 	}
@@ -202,8 +202,45 @@ int main()
 	float logSpeedX = 1000;
 	float logSpeedY = -1500;
 
+	// Control the player input
+	bool acceptInput = false;
+
+	// Prepare the sound
+	SoundBuffer chopBuffer;
+	chopBuffer.loadFromFile("sound/chop.wav");
+	Sound chop;
+	chop.setBuffer(chopBuffer);
+
+	SoundBuffer deathBuffer;
+	deathBuffer.loadFromFile("sound/death.wav");
+	Sound death;
+	death.setBuffer(deathBuffer);
+
+	// Out of time
+	SoundBuffer ootBuffer;
+	ootBuffer.loadFromFile("sound/out_of_time.wav");
+	Sound outOfTime;
+	outOfTime.setBuffer(ootBuffer);
+
 	while (window.isOpen())
 	{
+		// score ++;
+		Event event;
+		while (window.pollEvent(event))
+		{
+
+
+			if (event.type == Event::KeyReleased && !paused)
+			{
+				// Listen for key presses again
+				acceptInput = true;
+
+				// hide the axe
+				spriteAxe.setPosition(2000,
+					spriteAxe.getPosition().y);
+			}
+
+		}
 
 		/*
 		****************************************
@@ -223,7 +260,96 @@ int main()
 
 			// Reset the time and the score
 			score = 0;
-			timeRemaining = 5;
+			timeRemaining = 6;
+
+			// Make all the branches disappear
+			for (int i = 1; i < NUM_BRANCHES; i++)
+			{
+				branchPositions[i] = side::NONE;
+			}
+
+			// Make sure the gravestone is hidden
+			spriteRIP.setPosition(675, 2000);
+
+			// Move the player into position
+			spritePlayer.setPosition(580, 720);
+
+			acceptInput = true;
+
+		}
+
+		// Wrap the player controls to
+		// Make sure we are accepting input
+		if (acceptInput)
+		{
+			// More code here next...
+			// First handle pressing the right cursor key
+			if (Keyboard::isKeyPressed(Keyboard::Right))
+			{
+				// Make sure the player is on the right
+				playerSide = side::RIGHT;
+
+				score++;
+
+				// Add to the amount of time remaining
+				timeRemaining += (2 / score) + .15;
+
+				spriteAxe.setPosition(AXE_POSITION_RIGHT,
+					spriteAxe.getPosition().y);
+
+
+
+				spritePlayer.setPosition(1200, 720);
+
+				// update the branches
+				updateBranches(score);
+
+				// set the log flying to the left
+				spriteLog.setPosition(810, 720);
+				logSpeedX = -5000;
+				logActive = true;
+
+
+				acceptInput = false;
+
+				// Play a chop sound
+				chop.play();
+
+			}
+
+			// Handle the left cursor key
+			if (Keyboard::isKeyPressed(Keyboard::Left))
+			{
+				// Make sure the player is on the left
+				playerSide = side::LEFT;
+
+				score++;
+
+				// Add to the amount of time remaining
+				timeRemaining += (2 / score) + .15;
+
+				spriteAxe.setPosition(AXE_POSITION_LEFT,
+					spriteAxe.getPosition().y);
+
+
+				spritePlayer.setPosition(580, 720);
+
+				// update the branches
+				updateBranches(score);
+
+				// set the log flying
+				spriteLog.setPosition(810, 720);
+				logSpeedX = 5000;
+				logActive = true;
+
+
+				acceptInput = false;
+
+				// Play a chop sound
+				chop.play();
+
+			}
+
 
 		}
 
@@ -261,6 +387,9 @@ int main()
 					textRect.height / 2.0f);
 
 				messageText.setPosition(1920 / 2.0f, 1080 / 2.0f);
+
+				// Play the out of time sound
+				outOfTime.play();
 
 			}
 
@@ -405,8 +534,9 @@ int main()
 				if (branchPositions[i] == side::LEFT)
 				{
 					// Move the sprite to the left side
-					branches[i].setPosition(600, height);
+					branches[i].setPosition(610, height);
 					// Flip the sprite round the other way
+					branches[i].setOrigin(220, 40);
 					branches[i].setRotation(180);
 				}
 				else if (branchPositions[i] == side::RIGHT)
@@ -414,6 +544,7 @@ int main()
 					// Move the sprite to the right side
 					branches[i].setPosition(1330, height);
 					// Set the sprite rotation to normal
+					branches[i].setOrigin(220, 40);
 					branches[i].setRotation(0);
 
 				}
@@ -422,6 +553,56 @@ int main()
 					// Hide the branch
 					branches[i].setPosition(3000, height);
 				}
+			}
+
+			// Handle a flying log				
+			if (logActive)
+			{
+
+				spriteLog.setPosition(
+					spriteLog.getPosition().x + (logSpeedX * dt.asSeconds()),
+					spriteLog.getPosition().y + (logSpeedY * dt.asSeconds()));
+
+				// Has the insect reached the right hand edge of the screen?
+				if (spriteLog.getPosition().x < -100 ||
+					spriteLog.getPosition().x > 2000)
+				{
+					// Set it up ready to be a whole new cloud next frame
+					logActive = false;
+					spriteLog.setPosition(810, 720);
+				}
+			}
+
+			// has the player been squished by a branch?
+			if (branchPositions[5] == playerSide)
+			{
+				// death
+				paused = true;
+				acceptInput = false;
+
+				// Draw the gravestone
+				spriteRIP.setPosition(525, 760);
+
+				// hide the player
+				spritePlayer.setPosition(2000, 660);
+
+				// Change the text of the message
+				messageText.setString("SQUISHED!!");
+
+				// Center it on the screen
+				FloatRect textRect = messageText.getLocalBounds();
+
+				messageText.setOrigin(textRect.left +
+					textRect.width / 2.0f,
+					textRect.top + textRect.height / 2.0f);
+
+				messageText.setPosition(1920 / 2.0f,
+					1080 / 2.0f);
+
+				// Play the death sound
+				death.play();
+
+
 			}
 
 		}
@@ -462,8 +643,7 @@ int main()
 		// Draw the gravestone
 		window.draw(spriteRIP);
 
-
-		// Draw the insect
+		// Draw the bee
 		window.draw(spriteBee);
 
 		// Draw the score
